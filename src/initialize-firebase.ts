@@ -13,7 +13,7 @@ admin.initializeApp({
     // "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
     // "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-hslbm%40vertex-7543c.iam.gserviceaccount.com",
     // "universe_domain": "googleapis.com"
-  } as any),
+  } as admin.ServiceAccount),
   storageBucket: 'vertex-7543c.appspot.com',
 });
 

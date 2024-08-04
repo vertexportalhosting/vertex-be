@@ -12,12 +12,13 @@ const config = {
   connector: 'mysql',
   url: '',
   host: process.env.DB_HOST,
-  port: 21976,
+  port: 19971,
   user: process.env.DB_USER,
   password: process.env.DB_PSW, // Replace with your MySQL password
   database: 'defaultdb', // Replace with your MySQL database name
   strict: true
 };
+console.log("config", config)
 // Observe application's life cycle to disconnect the datasource when
 // application is stopped. This allows the application to be shut down
 // gracefully. The `stop()` method is inherited from `juggler.DataSource`.
