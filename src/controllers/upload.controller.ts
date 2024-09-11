@@ -40,7 +40,8 @@ import {
             //   case 'image/jpeg':
             //   case 'image/png':
             //   case 'image/jpg':
-                if (file.size > 1000e5) {
+                if (file.size > 1181116006) {
+                  console.log("---file_size:", file.size)
                   return response.status(400).send({
                     message: 'Image size is too large. Max 1gb',
                   });
