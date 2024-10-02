@@ -29,6 +29,8 @@ import { SecurityBindings, securityId, UserProfile } from '@loopback/security';
 import { compare, genSalt, hash } from 'bcryptjs';
 import _ from 'lodash';
 import { UserRepository } from '../repositories';
+// import * as sgMail from '@sendgrid/mail';
+import { getTemplateHTML } from '../utils';
 
 @model()
 export class NewUserRequest extends User {
@@ -72,7 +74,10 @@ export class UserController {
     @inject(SecurityBindings.USER, { optional: true })
     public user: UserProfile,
     @repository(UserRepository) protected userRepository: UserRepository,
-  ) { }
+  ) {
+    console.log('process.env.SENDGRID_API_KEY: ', process.env.SENDGRID_API_KEY);
+    // sgMail.setApiKey(process.env.SENDGRID_API_KEY as string);
+   }
 
   @authenticate.skip()
   @post('/users/login', {
@@ -171,6 +176,7 @@ export class UserController {
     const password = await hash(newUserRequest.password, await genSalt());
     newUserRequest.password = password;
     const savedUser = await this.userRepository.create(newUserRequest);
+    await this.sendEmail(savedUser);
     return savedUser;
   }
 
@@ -257,5 +263,40 @@ export class UserController {
     @param.path.string('id') id: string,
   ): Promise<void> {
     await this.userRepository.deleteById(id);
+  }
+
+  @authenticate.skip()
+  @get('/test-email', {
+    responses: {
+      '204': {
+        description: 'Email test',
+      },
+    },
+  })
+  async testEmail(
+  ): Promise<void> {
+    await this.sendEmail({username: 'Doctor', email: 'test@gmail.com'} as any)
+  }
+
+
+  async sendEmail(doctor: User): Promise<void> {
+    const sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    const msg = {
+      to: process.env.SENDGRID_FROM_TO as string,
+      from: process.env.SENDGRID_FROM_EMAIL as string,
+      subject: 'Doctor Registration',
+      text: 'Doctor Registration',
+      html: getTemplateHTML(doctor),
+    };
+
+    try {
+      await sgMail.send(msg);
+      console.log('Email sent successfully');
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw new Error(error);
+    }
   }
 }
