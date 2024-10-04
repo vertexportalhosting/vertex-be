@@ -19,11 +19,21 @@ import {
 } from '@loopback/rest';
 import {Case} from '../models';
 import {CaseRepository} from '../repositories';
-
+import {getCaseHTML} from '../utils';
+import { SecurityBindings, UserProfile } from '@loopback/security';
+import { inject } from '@loopback/core';
+import { authenticate } from '@loopback/authentication';
+import { UserController } from './user.controller';
+import { UserRepository } from '@loopback/authentication-jwt';
+@authenticate('jwt')
 export class CaseController {
   constructor(
     @repository(CaseRepository)
-    public caseRepository : CaseRepository,
+    public caseRepository: CaseRepository,
+    @repository(UserRepository)
+    public userRepository: UserRepository,
+    @inject(SecurityBindings.USER, { optional: true })
+    public user: UserProfile,
   ) {}
 
   @post('/cases')
@@ -42,9 +52,42 @@ export class CaseController {
         },
       },
     })
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
     newCase: Omit<Case, 'id'>,
-  ): Promise<Case> {
-    return this.caseRepository.create(newCase);
+  ): Promise<any> {
+    const userProfile = await this.userRepository.findOne({
+      where: {
+        id: currentUserProfile.id
+      }
+    })
+    const _newCase = await this.caseRepository.create(newCase);
+    const filter = {
+      where: {
+        id: _newCase.id
+      },
+      include: [
+        {
+          relation: 'patient',
+        },
+        {
+          relation: 'user',
+        },
+        {
+          relation: 'scan',
+          order: 'id DESC',
+          scope: {
+            include: [
+              {
+                relation: 'user',
+              },
+            ],
+          },
+        },
+      ],
+    };
+    const _case = await this.caseRepository.findOne(filter);
+    await this.sendCaseEmail(_case, userProfile);
+    return _case;
   }
 
   @get('/cases/count')
@@ -52,9 +95,7 @@ export class CaseController {
     description: 'Case model count',
     content: {'application/json': {schema: CountSchema}},
   })
-  async count(
-    @param.where(Case) where?: Where<Case>,
-  ): Promise<Count> {
+  async count(@param.where(Case) where?: Where<Case>): Promise<Count> {
     return this.caseRepository.count(where);
   }
 
@@ -70,9 +111,7 @@ export class CaseController {
       },
     },
   })
-  async find(
-    @param.filter(Case) filter?: Filter<Case>,
-  ): Promise<Case[]> {
+  async find(@param.filter(Case) filter?: Filter<Case>): Promise<Case[]> {
     return this.caseRepository.find(filter);
   }
 
@@ -106,7 +145,7 @@ export class CaseController {
   })
   async findById(
     @param.path.number('id') id: number,
-    @param.filter(Case, {exclude: 'where'}) filter?: FilterExcludingWhere<Case>
+    @param.filter(Case, {exclude: 'where'}) filter?: FilterExcludingWhere<Case>,
   ): Promise<Case> {
     return this.caseRepository.findById(id, filter);
   }
@@ -146,5 +185,26 @@ export class CaseController {
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.caseRepository.deleteById(id);
+  }
+
+  async sendCaseEmail(_case: any, profile?: any): Promise<void> {
+    const sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    const msg = {
+      to: profile?.role === 'admin' && _case.userId != profile.id ? _case?.user?.email : process.env.SENDGRID_FROM_TO as string,
+      from: process.env.SENDGRID_FROM_EMAIL as string,
+      subject: 'A New Case is Registered',
+      text: 'Case Registration',
+      html: getCaseHTML(_case),
+    };
+
+    try {
+      await sgMail.send(msg);
+      console.log('Email sent successfully');
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw new Error(error);
+    }
   }
 }

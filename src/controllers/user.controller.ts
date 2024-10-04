@@ -75,8 +75,6 @@ export class UserController {
     public user: UserProfile,
     @repository(UserRepository) protected userRepository: UserRepository,
   ) {
-    console.log('process.env.SENDGRID_API_KEY: ', process.env.SENDGRID_API_KEY);
-    // sgMail.setApiKey(process.env.SENDGRID_API_KEY as string);
    }
 
   @authenticate.skip()
