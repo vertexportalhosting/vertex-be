@@ -110,7 +110,7 @@ export class UserController {
     }
     const userProfile = this.userService.convertToUserProfile(user);
     console.log('userProfile: ', userProfile);
-    const passwordMatched = compare(
+    const passwordMatched = await compare(
       credentials.password,
       user.password
     );
