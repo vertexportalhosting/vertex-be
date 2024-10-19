@@ -114,6 +114,7 @@ export class UserController {
       credentials.password,
       user.password
     );
+    console.log('passwordMatched: ', passwordMatched);
     if (!passwordMatched) {
       throw new Error('Invalid password');
     }
