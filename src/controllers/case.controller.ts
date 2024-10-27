@@ -19,7 +19,7 @@ import {
 } from '@loopback/rest';
 import {Case} from '../models';
 import {CaseRepository, PatientHistoryRepository} from '../repositories';
-import {getCaseHTML} from '../utils';
+import {getCaseHTML, getNotifyCaseHTML} from '../utils';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import {inject} from '@loopback/core';
 import {authenticate} from '@loopback/authentication';
@@ -198,29 +198,37 @@ export class CaseController {
   })
   async updateCaseStageById(
     @param.path.number('id') id: number,
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Case, {partial: true}),
-        },
-      },
-    })
+    @requestBody()
     newCase: any,
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
   ): Promise<void> {
     const patient: any = await this.caseRepository.findOne({
       where: {
         id: newCase.id,
       },
+      include: [
+        {
+          relation: 'user'
+        }
+      ]
     });
     await this.patientHistoryRepository.create({
       details: newCase.details,
       actionDate: new Date().toString(),
       actionType: 'CASE',
-      caseId: newCase?.id,
+      caseId: id,
       patientId: patient?.patientId,
       userId: this.user.id,
     });
     await this.caseRepository.updateById(id, newCase);
+
+    if (newCase.case_status == 'recieved' && newCase?.notify == true) {
+      await this.notifyDoctor(patient, 'recieved', currentUserProfile);
+    } 
+    if (newCase.case_status == 'completed' && newCase?.notify == true) {
+      await this.notifyDoctor(patient, 'completed', currentUserProfile);
+    }
   }
 
   @put('/cases/{id}')
@@ -281,6 +289,34 @@ export class CaseController {
     try {
       await sgMail.send(msg);
       console.log('Email sent successfully');
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw new Error(error);
+    }
+  }
+
+  async notifyDoctor(_case: any, type: any, profile?: any): Promise<void> {
+    console.log('_case: ', _case);
+    console.log('profile: ', profile);
+    const sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    const msg = {
+      to:
+         _case.userId != profile.id
+          ? _case?.user?.email
+          : (process.env.SENDGRID_FROM_TO as string),
+      from: process.env.SENDGRID_FROM_EMAIL as string,
+      subject: type == 'recieved' ? 'Case Recieved' : 'Case Closed',
+      text: type == 'recieved' ? 'Your case has beem recieved' : 'Case Completed',
+      html: getNotifyCaseHTML(_case),
+    };
+
+    try {
+      await sgMail.send(msg);
+      console.log('Email sent successfully', _case.userId != profile.id
+        ? _case?.user?.email
+        : (process.env.SENDGRID_FROM_TO as string));
     } catch (error) {
       console.error('Error sending email:', error);
       throw new Error(error);
