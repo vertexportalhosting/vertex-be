@@ -210,6 +210,9 @@ export class CaseController {
       include: [
         {
           relation: 'user'
+        },
+        {
+          relation: 'patient'
         }
       ]
     });
