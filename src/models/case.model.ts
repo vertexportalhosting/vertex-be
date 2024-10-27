@@ -46,8 +46,33 @@ export class Case extends Entity {
 
   @property({
     type: 'boolean',
+    default: false
   })
   deleted?: boolean;
+
+  @property({
+    type: 'boolean',
+    default: false,
+  })
+  isStageOneComplete?: boolean;
+
+  @property({
+    type: 'boolean',
+    default: false,
+  })
+  isStageTwoComplete?: boolean;
+
+  @property({
+    type: 'boolean',
+    default: false,
+  })
+  isStageThreeComplete?: boolean;
+
+  @property({
+    type: 'boolean',
+    default: false,
+  })
+  isStageFourComplete?: boolean;
 
   @belongsTo(() => Patient)
   patientId: number;

@@ -18,13 +18,12 @@ import {
   response,
 } from '@loopback/rest';
 import {Case} from '../models';
-import {CaseRepository} from '../repositories';
+import {CaseRepository, PatientHistoryRepository} from '../repositories';
 import {getCaseHTML} from '../utils';
-import { SecurityBindings, UserProfile } from '@loopback/security';
-import { inject } from '@loopback/core';
-import { authenticate } from '@loopback/authentication';
-import { UserController } from './user.controller';
-import { UserRepository } from '@loopback/authentication-jwt';
+import {SecurityBindings, UserProfile} from '@loopback/security';
+import {inject} from '@loopback/core';
+import {authenticate} from '@loopback/authentication';
+import {UserRepository} from '@loopback/authentication-jwt';
 @authenticate('jwt')
 export class CaseController {
   constructor(
@@ -32,7 +31,9 @@ export class CaseController {
     public caseRepository: CaseRepository,
     @repository(UserRepository)
     public userRepository: UserRepository,
-    @inject(SecurityBindings.USER, { optional: true })
+    @repository(PatientHistoryRepository)
+    public patientHistoryRepository: PatientHistoryRepository,
+    @inject(SecurityBindings.USER, {optional: true})
     public user: UserProfile,
   ) {}
 
@@ -52,18 +53,19 @@ export class CaseController {
         },
       },
     })
-    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
     newCase: Omit<Case, 'id'>,
   ): Promise<any> {
     const userProfile = await this.userRepository.findOne({
       where: {
-        id: currentUserProfile.id
-      }
-    })
+        id: currentUserProfile.id,
+      },
+    });
     const _newCase = await this.caseRepository.create(newCase);
     const filter = {
       where: {
-        id: _newCase.id
+        id: _newCase.id,
       },
       include: [
         {
@@ -87,6 +89,14 @@ export class CaseController {
     };
     const _case = await this.caseRepository.findOne(filter);
     await this.sendCaseEmail(_case, userProfile);
+    await this.patientHistoryRepository.create({
+      details: 'New Patient Added',
+      actionDate: new Date().toString(),
+      actionType: 'CASE',
+      caseId: _case?.id,
+      patientId: _case?.patientId,
+      userId: _case?.userId,
+    });
     return _case;
   }
 
@@ -165,6 +175,51 @@ export class CaseController {
     })
     newCase: Case,
   ): Promise<void> {
+    const patient: any = await this.caseRepository.findOne({
+      where: {
+        id: newCase.id,
+      },
+    });
+    await this.patientHistoryRepository.create({
+      details: 'Patient Updated',
+      actionDate: new Date().toString(),
+      actionType: 'CASE',
+      caseId: newCase?.id,
+      patientId: patient?.patientId,
+      userId: this.user.id,
+    });
+    await this.caseRepository.updateById(id, newCase);
+  }
+
+
+  @patch('/cases/stage/{id}')
+  @response(204, {
+    description: 'Case Stage Update success',
+  })
+  async updateCaseStageById(
+    @param.path.number('id') id: number,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Case, {partial: true}),
+        },
+      },
+    })
+    newCase: any,
+  ): Promise<void> {
+    const patient: any = await this.caseRepository.findOne({
+      where: {
+        id: newCase.id,
+      },
+    });
+    await this.patientHistoryRepository.create({
+      details: newCase.details,
+      actionDate: new Date().toString(),
+      actionType: 'CASE',
+      caseId: newCase?.id,
+      patientId: patient?.patientId,
+      userId: this.user.id,
+    });
     await this.caseRepository.updateById(id, newCase);
   }
 
@@ -184,7 +239,28 @@ export class CaseController {
     description: 'Case DELETE success',
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
-    await this.caseRepository.deleteById(id);
+    const _case: any = await this.caseRepository.findOne({
+      where: {
+        id: id,
+      },
+      include: [
+        {
+          relation: 'patient',
+        },
+        {
+          relation: 'user',
+        },
+      ],
+    });
+    await this.patientHistoryRepository.create({
+      details: 'Patient/Case Removed',
+      actionDate: new Date().toString(),
+      actionType: 'CASE',
+      caseId: _case?.id,
+      patientId: _case?.patient?.id,
+      userId: this.user.id,
+    });
+    await this.caseRepository.updateById(id, {deleted: true});
   }
 
   async sendCaseEmail(_case: any, profile?: any): Promise<void> {
@@ -192,7 +268,10 @@ export class CaseController {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
     const msg = {
-      to: profile?.role === 'admin' && _case.userId != profile.id ? _case?.user?.email : process.env.SENDGRID_FROM_TO as string,
+      to:
+        profile?.role === 'admin' && _case.userId != profile.id
+          ? _case?.user?.email
+          : (process.env.SENDGRID_FROM_TO as string),
       from: process.env.SENDGRID_FROM_EMAIL as string,
       subject: 'A New Case is Registered',
       text: 'Case Registration',

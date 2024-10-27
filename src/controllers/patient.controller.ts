@@ -19,7 +19,8 @@ import {
 } from '@loopback/rest';
 import { Patient, PatientHistory } from '../models';
 import { PatientRepository } from '../repositories';
-
+import { authenticate } from '@loopback/authentication';
+@authenticate('jwt')
 export class PatientControllerController {
   constructor(
     @repository(PatientRepository)

@@ -32,6 +32,12 @@ export class Scan extends Entity {
   })
   uploadDate: string;
 
+  // can be 0,1,2,3
+  @property({
+    type: 'number',
+  })
+  stage: number;
+
   @belongsTo(() => Patient)
   patientId: number;
 
@@ -45,7 +51,6 @@ export class Scan extends Entity {
     super(data);
   }
 }
-
 
 export interface ScanRelations {
   patientId: Patient;

@@ -37,7 +37,7 @@ export class PatientHistory extends Entity {
   userId: string;
 
   @belongsTo(() => Case)
-  caseId: number
+  caseId: number;
 
   constructor(data?: Partial<PatientHistory>) {
     super(data);

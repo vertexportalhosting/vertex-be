@@ -23,7 +23,6 @@ export class Patient extends Entity {
   })
   gender: string;
 
-
   @property({
     type: 'string',
   })

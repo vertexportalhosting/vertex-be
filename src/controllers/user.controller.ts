@@ -28,7 +28,7 @@ import {
 import { SecurityBindings, securityId, UserProfile } from '@loopback/security';
 import { compare, genSalt, hash } from 'bcryptjs';
 import _ from 'lodash';
-import { UserRepository } from '../repositories';
+import { PatientHistoryRepository, UserRepository } from '../repositories';
 // import * as sgMail from '@sendgrid/mail';
 import { getTemplateHTML } from '../utils';
 
@@ -74,6 +74,8 @@ export class UserController {
     @inject(SecurityBindings.USER, { optional: true })
     public user: UserProfile,
     @repository(UserRepository) protected userRepository: UserRepository,
+    @repository(PatientHistoryRepository)
+    public patientHistoryRepository: PatientHistoryRepository,
   ) {
    }
 
@@ -175,6 +177,12 @@ export class UserController {
     const password = await hash(newUserRequest.password, await genSalt());
     newUserRequest.password = password;
     const savedUser = await this.userRepository.create(newUserRequest);
+    await this.patientHistoryRepository.create({
+      details: `New Doctor ${newUserRequest?.name} Added`,
+      actionDate: new Date().toString(),
+      actionType: 'DOCTOR',
+      userId: savedUser.id,
+    });
     await this.sendEmail(savedUser);
     return savedUser;
   }
@@ -197,6 +205,12 @@ export class UserController {
     })
     user: Partial<User>,
   ): Promise<void> {
+    await this.patientHistoryRepository.create({
+      details: `Doctor ${user?.name} Updated`,
+      actionDate: new Date().toString(),
+      actionType: 'DOCTOR',
+      userId: this.user.id,
+    });
     await this.userRepository.updateById(id, user);
   }
 
@@ -261,6 +275,13 @@ export class UserController {
   async deleteUserById(
     @param.path.string('id') id: string,
   ): Promise<void> {
+    const user = await this.userRepository.findById(id);
+    await this.patientHistoryRepository.create({
+      details: `Doctor ${user?.name} Deleted`,
+      actionDate: new Date().toString(),
+      actionType: 'DOCTOR',
+      userId: this.user.id,
+    });
     await this.userRepository.deleteById(id);
   }
 

@@ -21,18 +21,25 @@ import {
   RestBindings,
 } from '@loopback/rest';
 import {Scan} from '../models';
-import {ScanRepository} from '../repositories';
+import {PatientHistoryRepository, ScanRepository} from '../repositories';
 import {inject} from '@loopback/core';
 import bucket from '../initialize-firebase';
 import multer from 'multer';
 import fs from 'fs';
+import { SecurityBindings, UserProfile } from '@loopback/security';
+import { authenticate } from '@loopback/authentication';
 
 const upload = multer({dest: 'uploads/'});
 
+@authenticate('jwt')
 export class ScanController {
   constructor(
     @repository(ScanRepository)
     public scanRepository: ScanRepository,
+    @repository(PatientHistoryRepository)
+    public patientHistoryRepository: PatientHistoryRepository,
+    @inject(SecurityBindings.USER, { optional: true })
+    public user: UserProfile,
   ) {}
 
   @post('/scans')
@@ -53,6 +60,14 @@ export class ScanController {
     })
     scans: Omit<Scan, 'id'>,
   ): Promise<Scan> {
+    await this.patientHistoryRepository.create({
+      details: 'New Scans Uploaded',
+      actionDate: new Date().toString(),
+      actionType: 'SCANS',
+      caseId: scans?.caseId,
+      patientId: scans?.patientId,
+      userId: this.user?.id
+    });
     return this.scanRepository.create(scans);
   }
 
@@ -150,6 +165,15 @@ export class ScanController {
     description: 'Scan DELETE success',
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
+    const scans = await this.scanRepository.findById(id)
+    await this.patientHistoryRepository.create({
+      details: 'Scan Deleted',
+      actionDate: new Date().toString(),
+      actionType: 'SCANS',
+      caseId: scans?.caseId,
+      patientId: scans?.patientId,
+      userId: this.user.id
+    });
     await this.scanRepository.deleteById(id);
   }
 
