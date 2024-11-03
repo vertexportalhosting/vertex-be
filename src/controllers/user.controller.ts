@@ -277,7 +277,7 @@ export class UserController {
   ): Promise<void> {
     const user = await this.userRepository.findById(id);
     await this.patientHistoryRepository.create({
-      details: `Doctor ${user?.name} Deleted`,
+      details: `Doctor ${user?.username} Deleted`,
       actionDate: new Date().toString(),
       actionType: 'DOCTOR',
       userId: this.user.id,
