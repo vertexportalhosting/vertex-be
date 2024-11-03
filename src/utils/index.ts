@@ -152,7 +152,7 @@ export function getNotifyCaseHTML(_case: any) {
                             <h2 style="margin-top: 0;">Hello, ${_case?.user?.role === 'admin' ? 'Admin' : _case?.user?.username}</h2>
                             
                             <p>The case with the following details has been 
-                                <strong>${_case?.status === 'completed' ? 'marked as completed' : 'received'}</strong> on the portal:</p>
+                                <strong>${_case?.case_status === 'completed' ? 'marked as completed' : 'received'}</strong> on the portal:</p>
 
                             <table width="100%" cellpadding="0" cellspacing="0" border="0">
                                 <tr>

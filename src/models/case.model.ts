@@ -4,6 +4,7 @@ import { Entity, model, property, hasOne, belongsTo, hasMany } from '@loopback/r
 import { Patient } from './patient.model';
 import { User } from './user.model';
 import { Scan } from './scans.model';
+import { PatientHistory } from './patient-history.model';
 
 @model()
 export class Case extends Entity {
@@ -74,6 +75,28 @@ export class Case extends Entity {
   })
   isStageFourComplete?: boolean;
 
+  @property({
+    type: 'date',
+    default: new Date(),
+  })
+  updated_at?: Date;
+
+  @property({
+    type: 'date',
+    default: new Date(),
+  })
+  created_at?: Date;
+
+  @property({
+    type: 'string',
+  })
+  updated_by?: string;
+
+  @property({
+    type: 'string',
+  })
+  created_by?: string;
+
   @belongsTo(() => Patient)
   patientId: number;
 
@@ -82,6 +105,9 @@ export class Case extends Entity {
 
   @hasMany(() => Scan)
   scan: Scan[];
+
+  @hasMany(() => PatientHistory, {keyTo: 'caseId', keyFrom: 'id'})
+  history: PatientHistory[];
 
   constructor(data?: Partial<Case>) {
     super(data);

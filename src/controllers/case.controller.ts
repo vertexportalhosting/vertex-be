@@ -18,7 +18,7 @@ import {
   response,
 } from '@loopback/rest';
 import {Case} from '../models';
-import {CaseRepository, PatientHistoryRepository} from '../repositories';
+import {CaseRepository, PatientHistoryRepository, ScanRepository} from '../repositories';
 import {getCaseHTML, getNotifyCaseHTML} from '../utils';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import {inject} from '@loopback/core';
@@ -33,6 +33,8 @@ export class CaseController {
     public userRepository: UserRepository,
     @repository(PatientHistoryRepository)
     public patientHistoryRepository: PatientHistoryRepository,
+    @repository(ScanRepository)
+    public ScanRepository: ScanRepository,
     @inject(SecurityBindings.USER, {optional: true})
     public user: UserProfile,
   ) {}
@@ -95,7 +97,7 @@ export class CaseController {
       actionType: 'CASE',
       caseId: _case?.id,
       patientId: _case?.patientId,
-      userId: _case?.userId,
+      userId: this.user?.id,
     });
     return _case;
   }
