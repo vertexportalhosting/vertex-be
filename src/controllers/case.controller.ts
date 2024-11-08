@@ -18,7 +18,11 @@ import {
   response,
 } from '@loopback/rest';
 import {Case} from '../models';
-import {CaseRepository, PatientHistoryRepository, ScanRepository} from '../repositories';
+import {
+  CaseRepository,
+  PatientHistoryRepository,
+  ScanRepository,
+} from '../repositories';
 import {getCaseHTML, getNotifyCaseHTML} from '../utils';
 import {SecurityBindings, UserProfile} from '@loopback/security';
 import {inject} from '@loopback/core';
@@ -64,6 +68,10 @@ export class CaseController {
         id: currentUserProfile.id,
       },
     });
+    newCase.updated_at = new Date();
+    newCase.updated_by = this.user.id;
+    newCase.created_at = new Date();
+    newCase.created_by = this.user.id;
     const _newCase = await this.caseRepository.create(newCase);
     const filter = {
       where: {
@@ -182,6 +190,8 @@ export class CaseController {
         id: newCase.id,
       },
     });
+    newCase.updated_at = new Date();
+    newCase.updated_by = this.user.id;
     await this.patientHistoryRepository.create({
       details: 'Patient Updated',
       actionDate: new Date().toString(),
@@ -192,7 +202,6 @@ export class CaseController {
     });
     await this.caseRepository.updateById(id, newCase);
   }
-
 
   @patch('/cases/stage/{id}')
   @response(204, {
@@ -211,13 +220,20 @@ export class CaseController {
       },
       include: [
         {
-          relation: 'user'
+          relation: 'user',
         },
         {
-          relation: 'patient'
-        }
-      ]
+          relation: 'patient',
+        },
+      ],
     });
+    newCase.updated_at = new Date();
+    newCase.updated_by = this.user.id;
+
+    if (!newCase.created_at) {
+      newCase.created_at = new Date();
+    }
+
     await this.patientHistoryRepository.create({
       details: newCase.details,
       actionDate: new Date().toString(),
@@ -230,7 +246,7 @@ export class CaseController {
 
     if (newCase.case_status == 'recieved' && newCase?.notify == true) {
       await this.notifyDoctor(patient, 'recieved', currentUserProfile);
-    } 
+    }
     if (newCase.case_status == 'completed' && newCase?.notify == true) {
       await this.notifyDoctor(patient, 'completed', currentUserProfile);
     }
@@ -244,6 +260,8 @@ export class CaseController {
     @param.path.number('id') id: number,
     @requestBody() newCase: Case,
   ): Promise<void> {
+    newCase.updated_at = new Date();
+    newCase.updated_by = this.user.id;
     await this.caseRepository.replaceById(id, newCase);
   }
 
@@ -273,7 +291,12 @@ export class CaseController {
       patientId: _case?.patient?.id,
       userId: this.user.id,
     });
-    await this.caseRepository.updateById(id, {deleted: true});
+
+    await this.caseRepository.updateById(id, {
+      deleted: true,
+      updated_at: new Date(),
+      updated_by: this.user.id,
+    });
   }
 
   async sendCaseEmail(_case: any, profile?: any): Promise<void> {
@@ -308,20 +331,24 @@ export class CaseController {
 
     const msg = {
       to:
-         _case.userId != profile.id
+        _case.userId != profile.id
           ? _case?.user?.email
           : (process.env.SENDGRID_FROM_TO as string),
       from: process.env.SENDGRID_FROM_EMAIL as string,
       subject: type == 'recieved' ? 'Case Recieved' : 'Case Closed',
-      text: type == 'recieved' ? 'Your case has beem recieved' : 'Case Completed',
+      text:
+        type == 'recieved' ? 'Your case has beem recieved' : 'Case Completed',
       html: getNotifyCaseHTML(_case),
     };
 
     try {
       await sgMail.send(msg);
-      console.log('Email sent successfully', _case.userId != profile.id
-        ? _case?.user?.email
-        : (process.env.SENDGRID_FROM_TO as string));
+      console.log(
+        'Email sent successfully',
+        _case.userId != profile.id
+          ? _case?.user?.email
+          : (process.env.SENDGRID_FROM_TO as string),
+      );
     } catch (error) {
       console.error('Error sending email:', error);
       throw new Error(error);

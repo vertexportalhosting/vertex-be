@@ -18,13 +18,19 @@ import {
   response,
 } from '@loopback/rest';
 import { Patient, PatientHistory } from '../models';
-import { PatientRepository } from '../repositories';
+import { CaseRepository, PatientRepository } from '../repositories';
 import { authenticate } from '@loopback/authentication';
+import { inject } from '@loopback/core';
+import { SecurityBindings, UserProfile } from '@loopback/security';
 @authenticate('jwt')
 export class PatientControllerController {
   constructor(
     @repository(PatientRepository)
     public patientRepository: PatientRepository,
+    @repository(CaseRepository)
+    public caseRepository: CaseRepository,
+    @inject(SecurityBindings.USER, { optional: true })
+    public user: UserProfile,
   ) { }
 
   @post('/patients')

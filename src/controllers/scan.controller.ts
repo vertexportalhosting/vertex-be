@@ -21,7 +21,7 @@ import {
   RestBindings,
 } from '@loopback/rest';
 import {Scan} from '../models';
-import {PatientHistoryRepository, ScanRepository} from '../repositories';
+import {CaseRepository, PatientHistoryRepository, ScanRepository} from '../repositories';
 import {inject} from '@loopback/core';
 import bucket from '../initialize-firebase';
 import multer from 'multer';
@@ -36,6 +36,8 @@ export class ScanController {
   constructor(
     @repository(ScanRepository)
     public scanRepository: ScanRepository,
+    @repository(CaseRepository)
+    public caseRepository: CaseRepository,
     @repository(PatientHistoryRepository)
     public patientHistoryRepository: PatientHistoryRepository,
     @inject(SecurityBindings.USER, { optional: true })
@@ -68,6 +70,11 @@ export class ScanController {
       patientId: scans?.patientId,
       userId: this.user?.id
     });
+    const _case = await this.caseRepository.findById(scans.caseId);
+    if (_case) {
+      _case.updated_at = new Date();
+      _case.updated_by = this.user.id;
+    }
     return this.scanRepository.create(scans);
   }
 
@@ -112,6 +119,11 @@ export class ScanController {
     scans: Scan,
     @param.where(Scan) where?: Where<Scan>,
   ): Promise<Count> {
+    const _case = await this.caseRepository.findById(scans.caseId);
+    if (_case) {
+      _case.updated_at = new Date();
+      _case.updated_by = this.user.id;
+    }
     return this.scanRepository.updateAll(scans, where);
   }
 
@@ -146,6 +158,11 @@ export class ScanController {
     })
     scans: Scan,
   ): Promise<void> {
+    const _case = await this.caseRepository.findById(scans.caseId);
+    if (_case) {
+      _case.updated_at = new Date();
+      _case.updated_by = this.user.id;
+    }
     await this.scanRepository.updateById(id, scans);
   }
 
@@ -157,6 +174,11 @@ export class ScanController {
     @param.path.number('id') id: number,
     @requestBody() scans: Scan,
   ): Promise<void> {
+    const _case = await this.caseRepository.findById(scans.caseId);
+    if (_case) {
+      _case.updated_at = new Date();
+      _case.updated_by = this.user.id;
+    }
     await this.scanRepository.replaceById(id, scans);
   }
 
@@ -174,6 +196,11 @@ export class ScanController {
       patientId: scans?.patientId,
       userId: this.user.id
     });
+    const _case = await this.caseRepository.findById(scans.caseId);
+    if (_case) {
+      _case.updated_at = new Date();
+      _case.updated_by = this.user.id;
+    }
     await this.scanRepository.deleteById(id);
   }
 
