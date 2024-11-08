@@ -216,7 +216,7 @@ export class CaseController {
   ): Promise<void> {
     const patient: any = await this.caseRepository.findOne({
       where: {
-        id: newCase.id,
+        id: id,
       },
       include: [
         {

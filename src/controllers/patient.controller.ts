@@ -18,7 +18,7 @@ import {
   response,
 } from '@loopback/rest';
 import { Patient, PatientHistory } from '../models';
-import { CaseRepository, PatientRepository } from '../repositories';
+import { CaseRepository, PatientHistoryRepository, PatientRepository } from '../repositories';
 import { authenticate } from '@loopback/authentication';
 import { inject } from '@loopback/core';
 import { SecurityBindings, UserProfile } from '@loopback/security';
@@ -27,6 +27,8 @@ export class PatientControllerController {
   constructor(
     @repository(PatientRepository)
     public patientRepository: PatientRepository,
+    @repository(PatientHistoryRepository)
+    public historyRepository: PatientHistoryRepository,
     @repository(CaseRepository)
     public caseRepository: CaseRepository,
     @inject(SecurityBindings.USER, { optional: true })
@@ -133,6 +135,23 @@ export class PatientControllerController {
     })
     patient: Patient,
   ): Promise<void> {
+    const _case = await this.caseRepository.findOne({
+      where: {
+        patientId: id
+      }
+    });
+    await this.historyRepository.create({
+      details: "Patient Details Updated",
+      actionDate: new Date().toString(),
+      actionType: 'PATIENT',
+      caseId: _case?.id,
+      patientId: id,
+      userId: this.user.id,
+    });
+    if (_case) {
+      _case.updated_at = new Date();
+      await this.caseRepository.updateById(id, _case);
+    }
     await this.patientRepository.updateById(id, patient);
   }
 
