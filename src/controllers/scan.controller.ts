@@ -70,10 +70,11 @@ export class ScanController {
       patientId: scans?.patientId,
       userId: this.user?.id
     });
-    const _case = await this.caseRepository.findById(scans.caseId);
+    const _case = await this.caseRepository.findById(scans?.caseId);
     if (_case) {
       _case.updated_at = new Date();
       _case.updated_by = this.user.id;
+      await this.caseRepository.save(_case);
     }
     return this.scanRepository.create(scans);
   }
@@ -123,6 +124,7 @@ export class ScanController {
     if (_case) {
       _case.updated_at = new Date();
       _case.updated_by = this.user.id;
+      await this.caseRepository.save(_case);
     }
     return this.scanRepository.updateAll(scans, where);
   }
@@ -162,6 +164,7 @@ export class ScanController {
     if (_case) {
       _case.updated_at = new Date();
       _case.updated_by = this.user.id;
+      this.caseRepository.save(_case);
     }
     await this.scanRepository.updateById(id, scans);
   }
@@ -178,6 +181,7 @@ export class ScanController {
     if (_case) {
       _case.updated_at = new Date();
       _case.updated_by = this.user.id;
+      await this.caseRepository.save(_case)
     }
     await this.scanRepository.replaceById(id, scans);
   }
@@ -200,6 +204,7 @@ export class ScanController {
     if (_case) {
       _case.updated_at = new Date();
       _case.updated_by = this.user.id;
+      await this.caseRepository.save(_case);
     }
     await this.scanRepository.deleteById(id);
   }
