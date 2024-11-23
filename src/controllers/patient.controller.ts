@@ -149,7 +149,9 @@ export class PatientControllerController {
       userId: this.user.id,
     });
     if (_case) {
-      _case.updated_at = new Date();
+      if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
+        _case.updated_at = new Date();
+      }
       await this.caseRepository.updateById(id, _case);
     }
     await this.patientRepository.updateById(id, patient);

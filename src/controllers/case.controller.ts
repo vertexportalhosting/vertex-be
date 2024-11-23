@@ -190,7 +190,9 @@ export class CaseController {
         id: newCase.id,
       },
     });
-    newCase.updated_at = new Date();
+    if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
+      newCase.updated_at = new Date();
+    }
     newCase.updated_by = this.user.id;
     await this.patientHistoryRepository.create({
       details: 'Patient Updated',
@@ -227,7 +229,9 @@ export class CaseController {
         },
       ],
     });
-    newCase.updated_at = new Date();
+    if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
+      newCase.updated_at = new Date();
+    }
     newCase.updated_by = this.user.id;
 
     if (!newCase.created_at) {
@@ -260,7 +264,9 @@ export class CaseController {
     @param.path.number('id') id: number,
     @requestBody() newCase: Case,
   ): Promise<void> {
-    newCase.updated_at = new Date();
+    if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
+      newCase.updated_at = new Date();
+    }
     newCase.updated_by = this.user.id;
     await this.caseRepository.replaceById(id, newCase);
   }
