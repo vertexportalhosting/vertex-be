@@ -74,8 +74,13 @@ export class ScanController {
     if (_case) {
       _case.updated_at = new Date();
       _case.updated_by = this.user.id;
+      _case.isViewedByAdmin = false;
+      _case.isViewedByDoctor = false;
       if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
+        _case.isViewedByAdmin = true;
         await this.caseRepository.save(_case);
+      } else {
+        _case.isViewedByDoctor = true;
       }
     }
     return this.scanRepository.create(scans);

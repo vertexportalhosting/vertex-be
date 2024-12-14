@@ -97,6 +97,28 @@ export class Case extends Entity {
   })
   created_by?: string;
 
+  @property({
+    type: 'string',
+  })
+  patient_name?: string;
+
+  @property({
+    type: 'string',
+  })
+  doctor_name?: string;
+
+  @property({
+    type: 'boolean',
+    default: false,
+  })
+  isViewedByDoctor?: boolean;
+
+  @property({
+    type: 'boolean',
+    default: false,
+  })
+  isViewedByAdmin?: boolean;
+
   @belongsTo(() => Patient)
   patientId: number;
 
