@@ -77,10 +77,10 @@ export class ScanController {
       _case.isViewedByAdmin = false;
       _case.isViewedByDoctor = false;
       if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
-        _case.isViewedByAdmin = true;
+        _case.isViewedByDoctor = true;
         await this.caseRepository.save(_case);
       } else {
-        _case.isViewedByDoctor = true;
+        _case.isViewedByAdmin = true;
       }
     }
     return this.scanRepository.create(scans);
