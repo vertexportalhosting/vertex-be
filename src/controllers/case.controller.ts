@@ -271,6 +271,40 @@ export class CaseController {
     await this.caseRepository.replaceById(id, newCase);
   }
 
+  @patch('/cases/status/{id}')
+  @response(204, {
+    description: 'Case Stage Update success',
+  })
+  async updateCaseStatusById(
+    @param.path.number('id') id: number,
+    @requestBody()
+    newCase: any,
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
+  ): Promise<void> {
+    const patient: any = await this.caseRepository.findOne({
+      where: {
+        id: id,
+      },
+      include: [
+        {
+          relation: 'user',
+        },
+        {
+          relation: 'patient',
+        },
+      ],
+    });
+    patient.isViewedByAdmin = false;
+    patient.isViewedByDoctor = false;
+    if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
+      patient.isViewedByAdmin = true;
+    } else {
+      patient.isViewedByDoctor = true;
+    }
+    await this.caseRepository.save(patient);
+  }
+  
   @del('/cases/{id}')
   @response(204, {
     description: 'Case DELETE success',
@@ -360,4 +394,6 @@ export class CaseController {
       throw new Error(error);
     }
   }
+
+
 }
