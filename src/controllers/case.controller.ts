@@ -286,22 +286,13 @@ export class CaseController {
       where: {
         id: id,
       },
-      include: [
-        {
-          relation: 'user',
-        },
-        {
-          relation: 'patient',
-        },
-      ],
     });
-    patient.isViewedByAdmin = false;
-    patient.isViewedByDoctor = false;
     if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
-      patient.isViewedByAdmin = true;
-    } else {
       patient.isViewedByDoctor = true;
+    } else {
+      patient.isViewedByAdmin = true;
     }
+    console.log("patient", patient)
     await this.caseRepository.save(patient);
   }
   

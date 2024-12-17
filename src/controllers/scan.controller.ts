@@ -81,6 +81,7 @@ export class ScanController {
         await this.caseRepository.save(_case);
       } else {
         _case.isViewedByAdmin = true;
+        await this.caseRepository.save(_case);
       }
     }
     return this.scanRepository.create(scans);
