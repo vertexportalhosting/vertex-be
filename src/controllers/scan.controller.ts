@@ -72,11 +72,11 @@ export class ScanController {
     });
     const _case = await this.caseRepository.findById(scans?.caseId);
     if (_case) {
-      _case.updated_at = new Date();
       _case.updated_by = this.user.id;
       _case.isViewedByAdmin = false;
       _case.isViewedByDoctor = false;
       if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
+        _case.updated_at = new Date();
         _case.isViewedByDoctor = true;
         await this.caseRepository.save(_case);
       } else {
