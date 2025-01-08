@@ -119,6 +119,12 @@ export class Case extends Entity {
   })
   isViewedByAdmin?: boolean;
 
+  @property({
+    type: 'date',
+    default: new Date(),
+  })
+  updated_at2?: Date;
+
   @belongsTo(() => Patient)
   patientId: number;
 

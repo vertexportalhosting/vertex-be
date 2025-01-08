@@ -80,6 +80,7 @@ export class ScanController {
         _case.isViewedByDoctor = true;
         await this.caseRepository.save(_case);
       } else {
+        _case.updated_at2 = new Date();
         _case.isViewedByAdmin = true;
         await this.caseRepository.save(_case);
       }
