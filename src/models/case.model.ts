@@ -125,6 +125,26 @@ export class Case extends Entity {
   })
   updated_at2?: Date;
 
+  @property({
+    type: 'date',
+  })
+  delivery_date_stage_0: Date;
+
+  @property({
+    type: 'date',
+  })
+  delivery_date_stage_1: Date;
+
+  @property({
+    type: 'date',
+  })
+  delivery_date_stage_2: Date;
+
+  @property({
+    type: 'date',
+  })
+  delivery_date_stage_3: Date;
+
   @belongsTo(() => Patient)
   patientId: number;
 
