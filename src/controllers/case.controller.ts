@@ -191,7 +191,7 @@ export class CaseController {
       },
     });
     if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
-      newCase.updated_at = new Date();
+      newCase.updated_at2 = new Date();
     }
     newCase.updated_by = this.user.id;
     await this.patientHistoryRepository.create({
