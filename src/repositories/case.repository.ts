@@ -12,6 +12,7 @@ import {
   User,
   Scan,
   PatientHistory,
+  Messages,
 } from '../models';
 import {DbDataSource} from '../datasources';
 import {inject, Getter} from '@loopback/core';
@@ -19,6 +20,7 @@ import {PatientRepository} from './patient.repository';
 import {UserRepository} from './user.repository';
 import {ScanRepository} from './scans.repository';
 import {PatientHistoryRepository} from './patient-history.repository';
+import { MessagesRepository } from './messages.repository';
 
 export class CaseRepository extends DefaultCrudRepository<
   Case,
@@ -39,6 +41,11 @@ export class CaseRepository extends DefaultCrudRepository<
     typeof Patient.prototype.id
   >;
 
+  public readonly messages: HasManyRepositoryFactory<
+  Messages,
+  typeof Case.prototype.id
+>;
+
   constructor(
     @inject('datasources.db') dataSource: DbDataSource,
     @repository.getter('PatientRepository')
@@ -49,6 +56,8 @@ export class CaseRepository extends DefaultCrudRepository<
     protected scanRepositoryGetter: Getter<ScanRepository>,
     @repository.getter('PatientHistoryRepository')
     protected patientHistoryRepositor: Getter<PatientHistoryRepository>,
+    @repository.getter('MessagesRepository')
+    protected messagesRepositor: Getter<MessagesRepository>,
   ) {
     super(Case, dataSource);
 
@@ -69,5 +78,8 @@ export class CaseRepository extends DefaultCrudRepository<
 
     this.history = this.createHasManyRepositoryFactoryFor('history', patientHistoryRepositor);
     this.registerInclusionResolver('history', this.history.inclusionResolver);
+
+    this.messages = this.createHasManyRepositoryFactoryFor('messages', messagesRepositor);
+    this.registerInclusionResolver('messages', this.messages.inclusionResolver);
   }
 }

@@ -10,4 +10,4 @@ export * from './patient-history.controller';
 export * from './scan.controller';
 export * from './scan.controller';
 export * from './case.controller';
-export * from './upload.controller';
+export * from './upload.controller';export * from './messages.controller';

@@ -9,3 +9,4 @@ export * from './patient.repository';
 export * from './scans.repository';
 export * from './user.repository';
 export * from './case.repository';
+export * from './messages.repository';

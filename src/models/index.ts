@@ -9,3 +9,4 @@ export * from './user.model';
 export * from './patient.model';
 export * from './scans.model';
 export * from './case.model';
+export * from './messages.model';

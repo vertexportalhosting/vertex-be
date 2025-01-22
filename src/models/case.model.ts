@@ -5,6 +5,7 @@ import { Patient } from './patient.model';
 import { User } from './user.model';
 import { Scan } from './scans.model';
 import { PatientHistory } from './patient-history.model';
+import { Messages } from './messages.model';
 
 @model()
 export class Case extends Entity {
@@ -156,6 +157,9 @@ export class Case extends Entity {
 
   @hasMany(() => PatientHistory, {keyTo: 'caseId', keyFrom: 'id'})
   history: PatientHistory[];
+
+  @hasMany(() => Messages, {keyTo: 'case_id'})
+  messages: Messages[];
 
   constructor(data?: Partial<Case>) {
     super(data);
