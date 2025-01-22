@@ -44,6 +44,8 @@ export class MessagesController {
     })
     messages: Omit<Messages, 'id'>,
   ): Promise<Messages> {
+    const now = new Date();
+    messages.created_at = new Date(now.getTime() + (now.getTimezoneOffset() * 60000))
     return this.messagesRepository.create(messages);
   }
 
