@@ -27,6 +27,18 @@ export class Messages extends Entity {
   })
   created_at?: Date;
 
+  @property({
+    type: 'boolean',
+    default: false
+  })
+  isReadByAdmin: boolean;
+
+  @property({
+    type: 'boolean',
+    default: false
+  })
+  isReadByDoctor: boolean
+
   @belongsTo(() => User)
   userId: string;
 

@@ -18,12 +18,22 @@ import {
   response,
 } from '@loopback/rest';
 import {Messages} from '../models';
-import {MessagesRepository} from '../repositories';
+import {CaseRepository, MessagesRepository, PatientHistoryRepository} from '../repositories';
+import { inject } from '@loopback/core';
+import { SecurityBindings, UserProfile } from '@loopback/security';
+import { authenticate } from '@loopback/authentication';
 
+@authenticate('jwt')
 export class MessagesController {
   constructor(
     @repository(MessagesRepository)
     public messagesRepository : MessagesRepository,
+    @repository(CaseRepository)
+    public caseRepository : CaseRepository,
+    @inject(SecurityBindings.USER, { optional: true })
+    public user: UserProfile,
+    @repository(PatientHistoryRepository)
+    public patientHistoryRepository: PatientHistoryRepository,
   ) {}
 
   @post('/messages')
@@ -44,8 +54,30 @@ export class MessagesController {
     })
     messages: Omit<Messages, 'id'>,
   ): Promise<Messages> {
+    await this.patientHistoryRepository.create({
+      details: 'New Message Recieved in Stage ' + messages.stage,
+      actionDate: new Date().toString(),
+      actionType: 'MESSAGE',
+      caseId: messages?.caseId,
+      userId: this.user?.id
+    });
     const now = new Date();
-    messages.created_at = new Date(now.getTime() + (now.getTimezoneOffset() * 60000))
+    messages.created_at = new Date(now.getTime() + (now.getTimezoneOffset() * 60000));
+    const _case = await this.caseRepository.findById(messages?.caseId);
+    if (_case) {
+      _case.updated_by = this.user.id;
+      _case.isViewedByAdmin = false;
+      _case.isViewedByDoctor = false;
+      if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
+        _case.updated_at = new Date();
+        _case.isViewedByDoctor = true;
+        await this.caseRepository.save(_case);
+      } else {
+        _case.updated_at2 = new Date();
+        _case.isViewedByAdmin = true;
+        await this.caseRepository.save(_case);
+      }
+    }
     return this.messagesRepository.create(messages);
   }
 
