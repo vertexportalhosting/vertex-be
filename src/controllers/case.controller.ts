@@ -72,7 +72,6 @@ export class CaseController {
     newCase.updated_by = this.user.id;
     newCase.created_at = new Date().toISOString();
     newCase.created_by = this.user.id;
-    newCase.delivery_date = new Date(newCase.delivery_date).toISOString();
     const _newCase = await this.caseRepository.create(newCase);
     const filter = {
       where: {
@@ -195,7 +194,6 @@ export class CaseController {
       newCase.updated_at2 = new Date().toISOString();
     }
     newCase.updated_by = this.user.id;
-    newCase.delivery_date = new Date(newCase.delivery_date).toISOString();
     await this.patientHistoryRepository.create({
       details: 'Patient Updated',
       actionDate: new Date().toString(),
@@ -239,7 +237,6 @@ export class CaseController {
     if (!newCase.created_at) {
       newCase.created_at = new Date().toISOString();
     }
-    newCase.delivery_date = new Date(newCase.delivery_date).toISOString();
     await this.patientHistoryRepository.create({
       details: newCase.details,
       actionDate: new Date().toString(),
@@ -270,7 +267,6 @@ export class CaseController {
       newCase.updated_at = new Date().toISOString();
     }
     newCase.updated_by = this.user.id;
-    newCase.delivery_date = new Date(newCase.delivery_date).toISOString();
     await this.caseRepository.replaceById(id, newCase);
   }
 
