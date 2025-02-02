@@ -76,11 +76,11 @@ export class ScanController {
       _case.isViewedByAdmin = false;
       _case.isViewedByDoctor = false;
       if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
-        _case.updated_at = new Date();
+        _case.updated_at = new Date().toISOString();
         _case.isViewedByDoctor = true;
         await this.caseRepository.save(_case);
       } else {
-        _case.updated_at2 = new Date();
+        _case.updated_at2 = new Date().toISOString();
         _case.isViewedByAdmin = true;
         await this.caseRepository.save(_case);
       }
@@ -131,7 +131,7 @@ export class ScanController {
   ): Promise<Count> {
     const _case = await this.caseRepository.findById(scans.caseId);
     if (_case) {
-      _case.updated_at = new Date();
+      _case.updated_at = new Date().toISOString();
       _case.updated_by = this.user.id;
       if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
         await this.caseRepository.save(_case);
@@ -173,7 +173,7 @@ export class ScanController {
   ): Promise<void> {
     const _case = await this.caseRepository.findById(scans.caseId);
     if (_case) {
-      _case.updated_at = new Date();
+      _case.updated_at = new Date().toISOString();
       _case.updated_by = this.user.id;
       if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
         await this.caseRepository.save(_case);
@@ -192,7 +192,7 @@ export class ScanController {
   ): Promise<void> {
     const _case = await this.caseRepository.findById(scans.caseId);
     if (_case) {
-      _case.updated_at = new Date();
+      _case.updated_at = new Date().toISOString();
       _case.updated_by = this.user.id;
       if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
         await this.caseRepository.save(_case);
@@ -216,7 +216,7 @@ export class ScanController {
     });
     const _case = await this.caseRepository.findById(scans.caseId);
     if (_case) {
-      _case.updated_at = new Date();
+      _case.updated_at = new Date().toISOString();
       _case.updated_by = this.user.id;
       if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
         await this.caseRepository.save(_case);

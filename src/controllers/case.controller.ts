@@ -68,9 +68,9 @@ export class CaseController {
         id: currentUserProfile.id,
       },
     });
-    newCase.updated_at = new Date();
+    newCase.updated_at = new Date().toISOString();
     newCase.updated_by = this.user.id;
-    newCase.created_at = new Date();
+    newCase.created_at = new Date().toISOString();
     newCase.created_by = this.user.id;
     const _newCase = await this.caseRepository.create(newCase);
     const filter = {
@@ -101,7 +101,7 @@ export class CaseController {
     await this.sendCaseEmail(_case, userProfile);
     await this.patientHistoryRepository.create({
       details: 'New Patient Added',
-      actionDate: new Date().toString(),
+      actionDate: new Date().toISOString(),
       actionType: 'CASE',
       caseId: _case?.id,
       patientId: _case?.patientId,
@@ -191,7 +191,7 @@ export class CaseController {
       },
     });
     if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
-      newCase.updated_at2 = new Date();
+      newCase.updated_at2 = new Date().toISOString();
     }
     newCase.updated_by = this.user.id;
     await this.patientHistoryRepository.create({
@@ -230,12 +230,12 @@ export class CaseController {
       ],
     });
     if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
-      newCase.updated_at = new Date();
+      newCase.updated_at = new Date().toISOString();
     }
     newCase.updated_by = this.user.id;
 
     if (!newCase.created_at) {
-      newCase.created_at = new Date();
+      newCase.created_at = new Date().toISOString();
     }
 
     await this.patientHistoryRepository.create({
@@ -265,7 +265,7 @@ export class CaseController {
     @requestBody() newCase: Case,
   ): Promise<void> {
     if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
-      newCase.updated_at = new Date();
+      newCase.updated_at = new Date().toISOString();
     }
     newCase.updated_by = this.user.id;
     await this.caseRepository.replaceById(id, newCase);
@@ -316,7 +316,7 @@ export class CaseController {
     });
     await this.patientHistoryRepository.create({
       details: 'Patient/Case Removed',
-      actionDate: new Date().toString(),
+      actionDate: new Date().toISOString(),
       actionType: 'CASE',
       caseId: _case?.id,
       patientId: _case?.patient?.id,
@@ -325,7 +325,7 @@ export class CaseController {
 
     await this.caseRepository.updateById(id, {
       deleted: true,
-      updated_at: new Date(),
+      updated_at: new Date().toISOString(),
       updated_by: this.user.id,
     });
   }

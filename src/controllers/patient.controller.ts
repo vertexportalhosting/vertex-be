@@ -150,7 +150,7 @@ export class PatientControllerController {
     });
     if (_case) {
       if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
-        _case.updated_at = new Date();
+        _case.updated_at = new Date().toISOString();
       }
       await this.caseRepository.updateById(id, _case);
     }

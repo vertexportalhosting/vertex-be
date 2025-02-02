@@ -77,16 +77,22 @@ export class Case extends Entity {
   isStageFourComplete?: boolean;
 
   @property({
-    type: 'date',
-    default: new Date(),
+    type: 'string',
+    mysql: {
+      dataType: 'VARCHAR',
+      dataLength: 255
+    }
   })
-  updated_at?: Date;
+  updated_at?: String;
 
   @property({
-    type: 'date',
-    default: new Date(),
+    type: 'string',
+    mysql: {
+      dataType: 'VARCHAR',
+      dataLength: 255
+    }
   })
-  created_at?: Date;
+  created_at?: String;
 
   @property({
     type: 'string',
@@ -121,30 +127,49 @@ export class Case extends Entity {
   isViewedByAdmin?: boolean;
 
   @property({
-    type: 'date',
-    default: new Date(),
+    type: 'string',
+    mysql: {
+      dataType: 'VARCHAR',
+      dataLength: 255
+    }
   })
-  updated_at2?: Date;
+  updated_at2?: String;
 
   @property({
-    type: 'date',
+    type: 'string',
+    mysql: {
+      dataType: 'VARCHAR',
+      dataLength: 255
+    }
   })
-  delivery_date_stage_0: Date;
+  delivery_date_stage_0: String;
 
   @property({
-    type: 'date',
+    type: 'string',
+    mysql: {
+      dataType: 'VARCHAR',
+      dataLength: 255
+    }
   })
-  delivery_date_stage_1: Date;
+  delivery_date_stage_1: String;
 
   @property({
-    type: 'date',
+    type: 'string',
+    mysql: {
+      dataType: 'VARCHAR',
+      dataLength: 255
+    }
   })
-  delivery_date_stage_2: Date;
+  delivery_date_stage_2: String;
 
   @property({
-    type: 'date',
+    type: 'string',
+    mysql: {
+      dataType: 'VARCHAR',
+      dataLength: 255
+    }
   })
-  delivery_date_stage_3: Date;
+  delivery_date_stage_3: String;
 
   @belongsTo(() => Patient)
   patientId: number;

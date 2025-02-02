@@ -22,10 +22,13 @@ export class Messages extends Entity {
   stage: string;
 
   @property({
-    type: 'date',
-    default: new Date()
+    type: 'string',
+    mysql: {
+      dataType: 'VARCHAR',
+      dataLength: 255
+    }
   })
-  created_at?: Date;
+  created_at?: String;
 
   @property({
     type: 'boolean',
