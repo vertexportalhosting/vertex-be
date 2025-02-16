@@ -340,6 +340,7 @@ export class ScanController {
         _case.updated_at = new Date().toISOString();
         _case.isViewedByDoctor = true;
         delete _case.user;
+        delete _case.patient;
         await this.caseRepository.save(_case);
       } else {
         _case.updated_at2 = new Date().toISOString();
@@ -348,6 +349,7 @@ export class ScanController {
           this.notifyDoctor(_case, userProfile);
         }
         delete _case.user;
+        delete _case.patient;
         await this.caseRepository.save(_case);
       }
     }
