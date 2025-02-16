@@ -82,6 +82,9 @@ export class ScanController {
       } else {
         _case.updated_at2 = new Date().toISOString();
         _case.isViewedByAdmin = true;
+        if (scans.upload_table == 1) {
+          _case.isViewedByDoctor = true;
+        }
         await this.caseRepository.save(_case);
       }
     }

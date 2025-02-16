@@ -38,6 +38,11 @@ export class Scan extends Entity {
   })
   stage: number;
 
+  @property({
+    type: 'number',
+  })
+  upload_table: number;
+
   @belongsTo(() => Patient)
   patientId: number;
 
