@@ -20,14 +20,21 @@ import {
   Response,
   RestBindings,
 } from '@loopback/rest';
-import {Scan} from '../models';
-import {CaseRepository, PatientHistoryRepository, ScanRepository} from '../repositories';
+import {CaseWithRelations, Scan} from '../models';
+import {
+  CaseRepository,
+  PatientHistoryRepository,
+  ScanRepository,
+} from '../repositories';
 import {inject} from '@loopback/core';
 import bucket from '../initialize-firebase';
 import multer from 'multer';
 import fs from 'fs';
-import { SecurityBindings, UserProfile } from '@loopback/security';
-import { authenticate } from '@loopback/authentication';
+import {SecurityBindings, UserProfile} from '@loopback/security';
+import {authenticate} from '@loopback/authentication';
+import { getNotifyScanHTML } from '../utils';
+import { profile } from 'console';
+import { UserRepository } from '@loopback/authentication-jwt';
 
 const upload = multer({dest: 'uploads/'});
 
@@ -36,11 +43,13 @@ export class ScanController {
   constructor(
     @repository(ScanRepository)
     public scanRepository: ScanRepository,
+    @repository(UserRepository)
+    public userRepository: UserRepository,
     @repository(CaseRepository)
     public caseRepository: CaseRepository,
     @repository(PatientHistoryRepository)
     public patientHistoryRepository: PatientHistoryRepository,
-    @inject(SecurityBindings.USER, { optional: true })
+    @inject(SecurityBindings.USER, {optional: true})
     public user: UserProfile,
   ) {}
 
@@ -68,7 +77,7 @@ export class ScanController {
       actionType: 'SCANS',
       caseId: scans?.caseId,
       patientId: scans?.patientId,
-      userId: this.user?.id
+      userId: this.user?.id,
     });
     const _case = await this.caseRepository.findById(scans?.caseId);
     if (_case) {
@@ -180,7 +189,7 @@ export class ScanController {
       _case.updated_by = this.user.id;
       if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
         await this.caseRepository.save(_case);
-      }    
+      }
     }
     await this.scanRepository.updateById(id, scans);
   }
@@ -199,7 +208,8 @@ export class ScanController {
       _case.updated_by = this.user.id;
       if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
         await this.caseRepository.save(_case);
-      }    }
+      }
+    }
     await this.scanRepository.replaceById(id, scans);
   }
 
@@ -208,14 +218,14 @@ export class ScanController {
     description: 'Scan DELETE success',
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
-    const scans = await this.scanRepository.findById(id)
+    const scans = await this.scanRepository.findById(id);
     await this.patientHistoryRepository.create({
       details: 'Scan Deleted',
       actionDate: new Date().toString(),
       actionType: 'SCANS',
       caseId: scans?.caseId,
       patientId: scans?.patientId,
-      userId: this.user.id
+      userId: this.user.id,
     });
     const _case = await this.caseRepository.findById(scans.caseId);
     if (_case) {
@@ -223,7 +233,8 @@ export class ScanController {
       _case.updated_by = this.user.id;
       if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
         await this.caseRepository.save(_case);
-      }    }
+      }
+    }
     await this.scanRepository.deleteById(id);
   }
 
@@ -290,6 +301,88 @@ export class ScanController {
       });
     });
   }
+
+  @post('/createAllScans', {
+    responses: {
+      '200': {
+        description: 'File Upload',
+        content: {'application/json': {schema: {type: 'object'}}},
+      },
+    },
+  })
+  async createAllScans(
+    @requestBody()
+    scans: any[],
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
+  ): Promise<Scan[]> {
+    const userProfile = await this.userRepository.findOne({
+      where: {
+        id: currentUserProfile.id,
+      },
+    });
+    await this.patientHistoryRepository.create({
+      details: 'New Scans Uploaded',
+      actionDate: new Date().toString(),
+      actionType: 'SCANS',
+      caseId: scans[0]?.caseId,
+      patientId: scans[0]?.patientId,
+      userId: this.user?.id
+    });
+    const _case: any = await this.caseRepository.findById(scans[0]?.caseId, {
+      include: [{relation: 'user'}, {relation: 'patient'}],
+    });
+    if (_case) {
+      _case.updated_by = this.user.id;
+      _case.isViewedByAdmin = false;
+      _case.isViewedByDoctor = false;
+      if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
+        _case.updated_at = new Date().toISOString();
+        _case.isViewedByDoctor = true;
+        delete _case.user;
+        await this.caseRepository.save(_case);
+      } else {
+        _case.updated_at2 = new Date().toISOString();
+        _case.isViewedByAdmin = true;
+        if (scans[0]?.upload_table == 2) {
+          this.notifyDoctor(_case, userProfile);
+        }
+        delete _case.user;
+        await this.caseRepository.save(_case);
+      }
+    }
+    return this.scanRepository.createAll(scans);
+  }
+
+  
+  async notifyDoctor(_case: any, profile?: any): Promise<void> {
+    const sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    const msg = {
+      to:
+        _case.userId != profile.id
+          ? _case?.user?.email
+          : (process.env.SENDGRID_FROM_TO as string),
+      from: process.env.SENDGRID_FROM_EMAIL as string,
+      subject: "New Scans Uploaded",
+      text: `New Scans Uploaded for ${_case?.patient?.name} by ${this.user?.name}`,
+      html: getNotifyScanHTML(_case),
+    };
+
+    try {
+      await sgMail.send(msg);
+      console.log(
+        'Email sent successfully',
+        _case.userId != profile.id
+          ? _case?.user?.email
+          : (process.env.SENDGRID_FROM_TO as string),
+      );
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw new Error(error);
+    }
+  }
 }
 
 function getUniqueFileAttr(file: any) {
@@ -304,7 +397,6 @@ function getUniqueFileAttr(file: any) {
   return {filePath, destination};
 }
 
-
 // @post('/download', {
 //   responses: {
 //     '200': {
@@ -316,3 +408,5 @@ function getUniqueFileAttr(file: any) {
 // async download() {
 
 // }
+
+
