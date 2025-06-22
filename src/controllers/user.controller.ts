@@ -30,7 +30,7 @@ import { compare, genSalt, hash } from 'bcryptjs';
 import _ from 'lodash';
 import { PatientHistoryRepository, UserRepository } from '../repositories';
 // import * as sgMail from '@sendgrid/mail';
-import { getTemplateHTML } from '../utils';
+import { getOtpTemplateHTML, getTemplateHTML } from '../utils';
 
 @model()
 export class NewUserRequest extends User {
@@ -187,6 +187,48 @@ export class UserController {
     return savedUser;
   }
 
+  @authenticate.skip()
+  @post('/authenticate-signup', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async authenticateSignUp(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(NewUserRequest, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    newUserRequest: NewUserRequest,
+  ): Promise<string> {
+    // check if user already exists
+    const existingUser = await this.userRepository.findOne({
+      where: { email: newUserRequest.email },
+    });
+
+    if (existingUser) {
+      throw new HttpErrors.BadRequest('User already exists');
+    }
+    // generate a random 6 digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // send email with the code
+    await this.sendOtpEmail(newUserRequest, code);
+    return code;
+  }
+
   @patch('/users/{id}', {
     responses: {
       '204': {
@@ -298,6 +340,31 @@ export class UserController {
     await this.sendEmail({username: 'Doctor', email: 'test@gmail.com'} as any)
   }
 
+  @get('/export/users-emails', {
+    responses: {
+      '200': {
+        description: 'Export doctor emails',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async exportDoctorsEmails(): Promise<string[]> {
+    const doctors = await this.userRepository.find({
+      where: { role: 'Doctor' },
+      fields: { email: true },
+    });
+    return _.map(doctors, 'email');
+  }
+
 
   async sendEmail(doctor: User): Promise<void> {
     const sgMail = require('@sendgrid/mail');
@@ -319,4 +386,28 @@ export class UserController {
       throw new Error(error);
     }
   }
+
+
+  async sendOtpEmail(data:any, otp: string): Promise<void> {
+    const sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    const msg = {
+      to: data.email as string,
+      from: process.env.SENDGRID_FROM_EMAIL as string,
+      subject: 'OTP Verification',
+      text: 'Verification Required',
+      html: getOtpTemplateHTML(data, otp),
+    };
+
+    try {
+      await sgMail.send(msg);
+      console.log('Email sent successfully');
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw new Error(error);
+    }
+  }
+
+
 }
