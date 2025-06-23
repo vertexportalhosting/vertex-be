@@ -3,7 +3,7 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import { authenticate, TokenService } from '@loopback/authentication';
+import {authenticate, TokenService} from '@loopback/authentication';
 import {
   Credentials,
   MyUserService,
@@ -11,8 +11,8 @@ import {
   User,
   UserServiceBindings,
 } from '@loopback/authentication-jwt';
-import { inject } from '@loopback/core';
-import { model, property, repository } from '@loopback/repository';
+import {inject} from '@loopback/core';
+import {model, property, repository} from '@loopback/repository';
 import {
   del,
   get,
@@ -25,12 +25,16 @@ import {
   requestBody,
   SchemaObject,
 } from '@loopback/rest';
-import { SecurityBindings, securityId, UserProfile } from '@loopback/security';
-import { compare, genSalt, hash } from 'bcryptjs';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
+import {compare, genSalt, hash} from 'bcryptjs';
 import _ from 'lodash';
-import { PatientHistoryRepository, UserRepository } from '../repositories';
+import {PatientHistoryRepository, UserRepository} from '../repositories';
 // import * as sgMail from '@sendgrid/mail';
-import { getOtpTemplateHTML, getTemplateHTML } from '../utils';
+import {
+  getOtpTemplateHTML,
+  getTemplateHTML,
+  sendNewsletterTemplateHTML,
+} from '../utils';
 
 @model()
 export class NewUserRequest extends User {
@@ -60,7 +64,7 @@ export const CredentialsRequestBody = {
   description: 'The input of login function',
   required: true,
   content: {
-    'application/json': { schema: CredentialsSchema },
+    'application/json': {schema: CredentialsSchema},
   },
 };
 
@@ -71,13 +75,12 @@ export class UserController {
     public jwtService: TokenService,
     @inject(UserServiceBindings.USER_SERVICE)
     public userService: MyUserService,
-    @inject(SecurityBindings.USER, { optional: true })
+    @inject(SecurityBindings.USER, {optional: true})
     public user: UserProfile,
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(PatientHistoryRepository)
     public patientHistoryRepository: PatientHistoryRepository,
-  ) {
-   }
+  ) {}
 
   @authenticate.skip()
   @post('/users/login', {
@@ -101,21 +104,18 @@ export class UserController {
   })
   async login(
     @requestBody(CredentialsRequestBody) credentials: Credentials,
-  ): Promise<{ token: string, role: string }> {
+  ): Promise<{token: string; role: string}> {
     const user: User | null = await this.userRepository.findOne({
       where: {
-        email: credentials.email
-      }
+        email: credentials.email,
+      },
     });
     if (!user) {
-      throw HttpErrors.NotFound('User not found')
+      throw HttpErrors.NotFound('User not found');
     }
     const userProfile = this.userService.convertToUserProfile(user);
     console.log('userProfile: ', userProfile);
-    const passwordMatched = await compare(
-      credentials.password,
-      user.password
-    );
+    const passwordMatched = await compare(credentials.password, user.password);
     console.log('passwordMatched: ', passwordMatched);
     if (!passwordMatched) {
       throw new Error('Invalid password');
@@ -123,7 +123,7 @@ export class UserController {
     delete user.password;
     // create a JSON Web Token based on the user profile
     const token = await this.jwtService.generateToken(userProfile);
-    return { token, role: user.role };
+    return {token, role: user.role};
   }
 
   @get('/whoAmI', {
@@ -216,7 +216,7 @@ export class UserController {
   ): Promise<string> {
     // check if user already exists
     const existingUser = await this.userRepository.findOne({
-      where: { email: newUserRequest.email },
+      where: {email: newUserRequest.email},
     });
 
     if (existingUser) {
@@ -241,7 +241,7 @@ export class UserController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(User, { partial: true }),
+          schema: getModelSchemaRef(User, {partial: true}),
         },
       },
     })
@@ -276,15 +276,13 @@ export class UserController {
         description: 'User model instance',
         content: {
           'application/json': {
-            schema: getModelSchemaRef(User, { includeRelations: true }),
+            schema: getModelSchemaRef(User, {includeRelations: true}),
           },
         },
       },
     },
   })
-  async findUserById(
-    @param.path.string('id') id: string,
-  ): Promise<User> {
+  async findUserById(@param.path.string('id') id: string): Promise<User> {
     return this.userRepository.findById(id);
   }
 
@@ -296,7 +294,7 @@ export class UserController {
           'application/json': {
             schema: {
               type: 'array',
-              items: getModelSchemaRef(User, { includeRelations: true }),
+              items: getModelSchemaRef(User, {includeRelations: true}),
             },
           },
         },
@@ -314,9 +312,7 @@ export class UserController {
       },
     },
   })
-  async deleteUserById(
-    @param.path.string('id') id: string,
-  ): Promise<void> {
+  async deleteUserById(@param.path.string('id') id: string): Promise<void> {
     const user = await this.userRepository.findById(id);
     await this.patientHistoryRepository.create({
       details: `Doctor ${user?.username} Deleted`,
@@ -335,9 +331,8 @@ export class UserController {
       },
     },
   })
-  async testEmail(
-  ): Promise<void> {
-    await this.sendEmail({username: 'Doctor', email: 'test@gmail.com'} as any)
+  async testEmail(): Promise<void> {
+    await this.sendEmail({username: 'Doctor', email: 'test@gmail.com'} as any);
   }
 
   @get('/export/users-emails', {
@@ -359,12 +354,58 @@ export class UserController {
   })
   async exportDoctorsEmails(): Promise<string[]> {
     const doctors = await this.userRepository.find({
-      where: { role: 'Doctor' },
-      fields: { email: true },
+      where: {role: 'Doctor'},
+      fields: {email: true},
     });
     return _.map(doctors, 'email');
   }
 
+  @post('/newsletter', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async sendNewsLetter(
+    @requestBody({
+      content: {},
+      data: {},
+    })
+    body: any,
+  ): Promise<{success: boolean}> {
+    const {data, content} = body;
+    if (!data || !content) {
+      throw new HttpErrors.BadRequest('Data and content are required');
+    }
+
+    const users = await this.userRepository.find({
+      where: {role: 'Doctor'},
+      fields: {email: true},
+    });
+
+    if (!users || users.length === 0) {
+      throw new HttpErrors.NotFound('No doctors found');
+    }
+
+    // Send email to each doctor
+    for (const user of users) {
+      if (user.email) {
+        data.email = user.email; // Set the email for each doctor
+        await this.sendNewsLetterEmails(data, content);
+      }
+    }
+
+    this.sendNewsLetterEmails(data, content);
+    return {success: true};
+  }
 
   async sendEmail(doctor: User): Promise<void> {
     const sgMail = require('@sendgrid/mail');
@@ -387,8 +428,7 @@ export class UserController {
     }
   }
 
-
-  async sendOtpEmail(data:any, otp: string): Promise<void> {
+  async sendOtpEmail(data: any, otp: string): Promise<void> {
     const sgMail = require('@sendgrid/mail');
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -409,5 +449,24 @@ export class UserController {
     }
   }
 
+  async sendNewsLetterEmails(data: any, content: any): Promise<void> {
+    const sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
+    const msg = {
+      to: data.email as string,
+      from: 'support@vertexdentalstudio.com',
+      subject: data.title,
+      text: data.title,
+      html: sendNewsletterTemplateHTML(data, content),
+    };
+
+    try {
+      await sgMail.send(msg);
+      console.log('Email sent successfully');
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw new Error(error);
+    }
+  }
 }
