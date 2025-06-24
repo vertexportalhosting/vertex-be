@@ -122,6 +122,7 @@ export class UserController {
     }
     delete user.password;
     // create a JSON Web Token based on the user profile
+    // extend token expiry
     const token = await this.jwtService.generateToken(userProfile);
     return {token, role: user.role};
   }

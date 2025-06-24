@@ -7,6 +7,7 @@ import { AuthenticationComponent } from '@loopback/authentication';
 import {
   JWTAuthenticationComponent,
   MyUserService,
+  TokenServiceBindings,
   UserCredentialsRepository,
   UserRepository,
   UserServiceBindings,
@@ -70,6 +71,7 @@ export class TodoListApplication extends BootMixin(
     this.repository(CaseRepository)
     // ------------- END OF SNIPPET -------------
     //new
+    this.bind(TokenServiceBindings.TOKEN_EXPIRES_IN).to('2592000');
     this.bind(UserServiceBindings.USER_SERVICE).toClass(MyUserService);
     this.bind(RestBindings.REQUEST_BODY_PARSER_OPTIONS).to({
       validation: {
