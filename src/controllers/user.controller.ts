@@ -388,7 +388,9 @@ export class UserController {
     }
 
     const users = await this.userRepository.find({
-      where: {role: 'Doctor'},
+      where: {role: 'Doctor', email: {
+        inq: data.emails
+      }},
       fields: {email: true},
     });
 
@@ -404,7 +406,6 @@ export class UserController {
       }
     }
 
-    this.sendNewsLetterEmails(data, content);
     return {success: true};
   }
 
