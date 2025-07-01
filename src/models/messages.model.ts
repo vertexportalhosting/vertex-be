@@ -13,6 +13,9 @@ export class Messages extends Entity {
 
   @property({
     type: 'string',
+    mysql: {
+      dataType: 'LONGTEXT'
+    }
   })
   message: string;
 
