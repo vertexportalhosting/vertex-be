@@ -166,7 +166,19 @@ export class CaseController {
   async findById(
     @param.path.number('id') id: number,
     @param.filter(Case, {exclude: 'where'}) filter?: FilterExcludingWhere<Case>,
+    @param.query.boolean('qrscanned', {
+      required: false,
+      description: 'If true, it will return the case with scans',
+    })
+    qrscanned?: boolean,
   ): Promise<Case> {
+    if (qrscanned) {
+      console.log('qrscanned: ', qrscanned);
+      const e_case = await this.caseRepository.findById(id);
+      e_case.qr_scan_count += 1;
+      console.log('e_case: ', e_case);
+      await this.caseRepository.updateById(id, e_case);
+    }
     return this.caseRepository.findById(id, filter);
   }
 
@@ -291,10 +303,10 @@ export class CaseController {
     } else {
       patient.isViewedByAdmin = true;
     }
-    console.log("patient", patient)
+    console.log('patient', patient);
     await this.caseRepository.save(patient);
   }
-  
+
   @del('/cases/{id}')
   @response(204, {
     description: 'Case DELETE success',
@@ -384,6 +396,4 @@ export class CaseController {
       throw new Error(error);
     }
   }
-
-
 }

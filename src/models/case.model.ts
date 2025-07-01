@@ -171,6 +171,14 @@ export class Case extends Entity {
   })
   delivery_date_stage_3: String;
 
+  @property({
+   type: 'number',
+   mysql: {
+      dataType: 'BIGINT',
+    }
+  })
+  qr_scan_count: number;
+
   @belongsTo(() => Patient)
   patientId: number;
 
