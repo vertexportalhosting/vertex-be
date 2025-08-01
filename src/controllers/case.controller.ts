@@ -199,7 +199,7 @@ export class CaseController {
   ): Promise<void> {
     const patient: any = await this.caseRepository.findOne({
       where: {
-        id: newCase.id,
+        id: id,
       },
     });
     if (this.user.id != '6d101073-fd60-4d26-ac1a-5ca5206d83d2') {
@@ -210,7 +210,7 @@ export class CaseController {
       details: 'Patient Updated',
       actionDate: new Date().toString(),
       actionType: 'CASE',
-      caseId: newCase?.id,
+      caseId: id,
       patientId: patient?.patientId,
       userId: this.user.id,
     });
